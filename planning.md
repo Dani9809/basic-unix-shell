@@ -39,7 +39,17 @@ Commands like `cd` and `exit` must be built manually because they change the sta
 * **`cd`:** Use the `chdir()` system call to change the current working directory.
 * **`help`:** Print a simple list of your built-in commands and how the shell works.
 
-### Phase 5: Polish & Advanced Features (Optional)
+### Phase 5: Polish & Core OS Features (Optional)
 * **I/O Redirection (`>`, `<`):** Use `open()`, `close()`, and `dup2()` to redirect standard input and output to files.
 * **Piping (`|`):** Connect the output of one process to the input of another using the `pipe()` system call.
 * **Background Processes (`&`):** Modify `waitpid()` logic so the shell doesn't wait for the child to finish if the command ends with `&`.
+
+### Phase 6: Usability & Quality of Life
+* **Signal Handling (Ctrl+C):** Catch `SIGINT` using `signal()` or `sigaction()`. This ensures that pressing `Ctrl+C` kills the running child process (like a runaway loop) rather than exiting the shell itself.
+* **Command History (Up/Down Arrows):** Integrate the GNU `readline` library (replacing basic `getline`) to allow scrolling through previously entered commands and better line editing.
+* **Tab Auto-completion:** Leverage `readline`'s completion features or write basic `opendir()`/`readdir()` logic to autocomplete file and directory names.
+
+### Phase 7: Advanced Variable & Logic Handling
+* **Environment Variables (`export`, `$VAR`):** Create an `export` built-in command. Update the tokenizer to scan for the `$` symbol and expand variables by pulling their values via `getenv()`.
+* **Logical Operators (`&&`, `||`):** Parse for conditional separators. Ensure that commands chained with `&&` only run if the previous command succeeded (returned `0`), and `||` runs only if it failed.
+* **Globbing (Wildcards):** Add support for `*` and `?`. Use the C `<glob.h>` library to expand patterns (e.g., `*.c`) into lists of matching filenames before sending them to `execvp()`.
