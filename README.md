@@ -100,8 +100,8 @@ myshell> exit
 ## Roadmap / Planned Features
 - [ ] **Usability & Quality of Life:** 
   - [x] Add Signal Handling (Ctrl+C).
-  - [ ] Support Command History (Up/Down Arrows) with GNU `readline`.
-  - [ ] Support Tab Auto-completion.
+  - [x] Support Command History (Up/Down Arrows) with GNU `readline`.
+  - [x] Support Tab Auto-completion.
 - [ ] **Advanced Variable & Logic Handling:** 
   - [ ] Parse Environment Variables (`export`, `$VAR`).
   - [ ] Parse Logical Operators (`&&`, `||`).

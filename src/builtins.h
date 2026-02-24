@@ -7,4 +7,6 @@ int shell_exit(char **args);
 int shell_num_builtins(void);
 int execute_builtin(char **args);
 
+extern char *builtin_str[];
+
 #endif

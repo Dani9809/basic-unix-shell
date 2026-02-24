@@ -43,17 +43,23 @@ int shell_cd(char **args)
 
 int shell_help(char **args)
 {
-  int i;
   (void)args; // unused
   printf("Basic Unix Shell\n");
   printf("Type program names and arguments, and hit enter.\n");
-  printf("The following are built in:\n");
-
-  for (i = 0; i < shell_num_builtins(); i++) {
-    printf("  %s\n", builtin_str[i]);
-  }
-
-  printf("Use the man command for information on other programs.\n");
+  printf("The following commands are built-in:\n");
+  printf("  cd <dir>  - Change the current working directory.\n");
+  printf("  help      - Print this help information.\n");
+  printf("  exit      - Safely terminate the shell.\n");
+  
+  printf("\nSupported Shell Features:\n");
+  printf("  <         - Redirect input from a file.\n");
+  printf("  >         - Redirect output to a file.\n");
+  printf("  |         - Pipe the output of one command to another.\n");
+  printf("  &         - Run the command in the background.\n");
+  printf("  Up/Down   - Cycle through command history.\n");
+  
+  printf("\nMost standard Unix commands (e.g., ls, pwd, echo, cat) form external processes.\n");
+  printf("Use the man command for detailed information on other programs.\n");
   return 1;
 }
 

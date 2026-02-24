@@ -7,7 +7,7 @@ OBJS = $(SRCS:.c=.o)
 all: myshell
 
 myshell: $(OBJS)
-	$(CC) $(CFLAGS) -o myshell $(OBJS)
+	$(CC) $(CFLAGS) -o myshell $(OBJS) -lreadline
 
 clean:
 	rm -f myshell src/*.o

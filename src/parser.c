@@ -1,26 +1,70 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <readline/readline.h>
+#include <readline/history.h>
 #include "parser.h"
 
 #define LSH_TOK_BUFSIZE 64
 #define LSH_TOK_DELIM " \t\r\n\a"
 
-char *shell_read_line(void)
+#include "builtins.h"
+
+// Generator function for command completion
+char *command_generator(const char *text, int state)
 {
-  char *line = NULL;
-  size_t bufsize = 0; // have getline allocate a buffer for us
-  ssize_t chars_read;
+  static int list_index, len;
+  char *name;
 
-  chars_read = getline(&line, &bufsize, stdin);
+  // If this is a new word to complete, initialize now.
+  if (!state) {
+    list_index = 0;
+    len = strlen(text);
+  }
 
-  if (chars_read == -1) {
-    if (feof(stdin)) {
-      exit(EXIT_SUCCESS);  // We received an EOF
-    } else  {
-      perror("readline");
-      exit(EXIT_FAILURE);
+  // Return the next name which partially matches from the command list.
+  while ((name = builtin_str[list_index])) {
+    list_index++;
+    if (strncmp(name, text, len) == 0) {
+      return strdup(name);
     }
+  }
+
+  // If no names matched, then return NULL.
+  return NULL;
+}
+
+// Custom completion function
+char **shell_completion(const char *text, int start, int end)
+{
+  char **matches = NULL;
+  (void)end;
+
+  // If this word is at the start of the line, then it is a command to complete.
+  if (start == 0) {
+    matches = rl_completion_matches(text, command_generator);
+  }
+
+  return matches; // If start > 0, returns NULL, falling back to default filename completion
+}
+
+void shell_init_readline(void)
+{
+  rl_attempted_completion_function = shell_completion;
+}
+
+char *shell_read_line(const char *prompt)
+{
+  char *line = readline(prompt);
+
+  // If EOF is encountered, readline returns NULL.
+  if (!line) {
+    exit(EXIT_SUCCESS);
+  }
+
+  // If line is not empty, add it to history
+  if (line[0] != '\0') {
+    add_history(line);
   }
 
   return line;
