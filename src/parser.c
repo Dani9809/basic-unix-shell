@@ -100,3 +100,45 @@ char **shell_split_line(char *line)
   tokens[position] = NULL;
   return tokens;
 }
+
+#include <glob.h>
+
+char **shell_expand_args(char **args) {
+    int bufsize = LSH_TOK_BUFSIZE;
+    int position = 0;
+    char **new_args = malloc(bufsize * sizeof(char*));
+
+    for (int i = 0; args[i] != NULL; i++) {
+        char *token = args[i];
+        
+        // Variable expansion
+        if (token[0] == '$') {
+            char *val = getenv(token + 1);
+            token = val ? val : "";
+        }
+        
+        // Globbing
+        glob_t glob_result;
+        memset(&glob_result, 0, sizeof(glob_result));
+        int ret = glob(token, GLOB_NOCHECK | GLOB_TILDE, NULL, &glob_result);
+        
+        if (ret == 0) {
+            for (size_t j = 0; j < glob_result.gl_pathc; j++) {
+                new_args[position++] = strdup(glob_result.gl_pathv[j]);
+                if (position >= bufsize) {
+                    bufsize += LSH_TOK_BUFSIZE;
+                    new_args = realloc(new_args, bufsize * sizeof(char*));
+                }
+            }
+            globfree(&glob_result);
+        } else {
+            new_args[position++] = strdup(token);
+            if (position >= bufsize) {
+                bufsize += LSH_TOK_BUFSIZE;
+                new_args = realloc(new_args, bufsize * sizeof(char*));
+            }
+        }
+    }
+    new_args[position] = NULL;
+    return new_args;
+}

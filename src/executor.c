@@ -8,6 +8,8 @@
 #include "executor.h"
 #include "builtins.h"
 
+int last_command_status = 0;
+
 void setup_redirection(char **args) {
   char *input_file = NULL;
   char *output_file = NULL;
@@ -64,6 +66,11 @@ int shell_launch(char **args, int run_bg)
       do {
         wpid = waitpid(pid, &status, WUNTRACED);
       } while (!WIFEXITED(status) && !WIFSIGNALED(status));
+      if (WIFEXITED(status)) {
+         last_command_status = WEXITSTATUS(status);
+      } else {
+         last_command_status = 1;
+      }
     } else {
       printf("[Started background process %d]\n", pid);
     }
@@ -152,8 +159,45 @@ int shell_execute(char **args)
 
   int builtin_res = execute_builtin(args);
   if (builtin_res != -1) {
+    last_command_status = 0;
     return builtin_res;
   }
 
   return shell_launch(args, run_bg);
+}
+
+int shell_execute_line(char **args) {
+    if (args[0] == NULL) return 1;
+
+    int i = 0;
+    int start = 0;
+    int loop_status = 1;
+    int skip_next = 0;
+    
+    while (args[i] != NULL) {
+        if (strcmp(args[i], "&&") == 0 || strcmp(args[i], "||") == 0) {
+            char *op = args[i];
+            args[i] = NULL;
+            
+            if (!skip_next && args[start] != NULL) {
+                loop_status = shell_execute(&args[start]);
+                if (loop_status == 0) return 0; // Exit shell
+            }
+            
+            if (strcmp(op, "&&") == 0) {
+                skip_next = (last_command_status != 0);
+            } else if (strcmp(op, "||") == 0) {
+                skip_next = (last_command_status == 0);
+            }
+            
+            start = i + 1;
+        }
+        i++;
+    }
+    
+    if (args[start] != NULL && !skip_next) {
+        loop_status = shell_execute(&args[start]);
+    }
+    
+    return loop_status;
 }

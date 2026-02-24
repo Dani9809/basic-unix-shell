@@ -98,14 +98,14 @@ myshell> exit
 ```
 
 ## Roadmap / Planned Features
-- [ ] **Usability & Quality of Life:** 
+- [x] **Usability & Quality of Life:** 
   - [x] Add Signal Handling (Ctrl+C).
   - [x] Support Command History (Up/Down Arrows) with GNU `readline`.
   - [x] Support Tab Auto-completion.
-- [ ] **Advanced Variable & Logic Handling:** 
-  - [ ] Parse Environment Variables (`export`, `$VAR`).
-  - [ ] Parse Logical Operators (`&&`, `||`).
-  - [ ] Add Globbing (Wildcards `*`, `?`).
+- [x] **Advanced Variable & Logic Handling:** 
+  - [x] Parse Environment Variables (`export`, `$VAR`).
+  - [x] Parse Logical Operators (`&&`, `||`).
+  - [x] Add Globbing (Wildcards `*`, `?`).
 
 ---
 *Built as an educational project exploring Unix system architecture.*

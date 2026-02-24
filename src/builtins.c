@@ -7,13 +7,15 @@
 char *builtin_str[] = {
   "cd",
   "help",
-  "exit"
+  "exit",
+  "export"
 };
 
 int (*builtin_func[]) (char **) = {
   &shell_cd,
   &shell_help,
-  &shell_exit
+  &shell_exit,
+  &shell_export
 };
 
 int shell_num_builtins() {
@@ -67,4 +69,30 @@ int shell_exit(char **args)
 {
   (void)args; // unused
   return 0;
+}
+
+int shell_export(char **args)
+{
+  if (args[1] == NULL) {
+    fprintf(stderr, "myshell: expected argument to \"export\", e.g., export VAR=value\n");
+    return 1;
+  }
+  
+  // Find the '=' character
+  char *eq_pos = strchr(args[1], '=');
+  if (eq_pos == NULL) {
+    fprintf(stderr, "myshell: invalid format for export, use VAR=value\n");
+    return 1;
+  }
+  
+  // Split name and value securely
+  *eq_pos = '\0';
+  char *name = args[1];
+  char *value = eq_pos + 1;
+  
+  if (setenv(name, value, 1) != 0) {
+    perror("myshell: export");
+  }
+  
+  return 1;
 }

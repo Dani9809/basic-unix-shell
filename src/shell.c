@@ -29,7 +29,24 @@ void shell_loop(void)
     }
     
     args = shell_split_line(line);
-    status = shell_execute(args);
+    
+    if (args && args[0]) {
+        char **expanded_args = shell_expand_args(args);
+        
+        // Backup pointers to free properly
+        int count = 0;
+        while(expanded_args[count]) count++;
+        char **to_free = malloc((count + 1) * sizeof(char*));
+        for (int i = 0; i < count; i++) to_free[i] = expanded_args[i];
+        
+        status = shell_execute_line(expanded_args);
+        
+        for (int i = 0; i < count; i++) free(to_free[i]);
+        free(to_free);
+        free(expanded_args);
+    } else {
+        status = 1; // Empty line
+    }
 
     free(line);
     free(args);
