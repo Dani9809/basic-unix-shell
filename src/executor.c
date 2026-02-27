@@ -9,11 +9,17 @@
 #include "builtins.h"
 
 int last_command_status = 0;
+pid_t shell_pgid = 0;
+int shell_terminal = STDIN_FILENO;
 
 void setup_redirection(char **args) {
   char *input_file = NULL;
   char *output_file = NULL;
+  char *err_file = NULL;
+  int append = 0;
+  int redirect_err = 0;
   int cmd_end = -1;
+  
   for (int i = 0; args[i] != NULL; i++) {
     if (strcmp(args[i], "<") == 0) {
       if (cmd_end == -1) cmd_end = i;
@@ -21,8 +27,20 @@ void setup_redirection(char **args) {
     } else if (strcmp(args[i], ">") == 0) {
       if (cmd_end == -1) cmd_end = i;
       output_file = args[i+1];
+    } else if (strcmp(args[i], ">>") == 0) {
+      if (cmd_end == -1) cmd_end = i;
+      output_file = args[i+1];
+      append = 1;
+    } else if (strcmp(args[i], "2>") == 0) {
+      if (cmd_end == -1) cmd_end = i;
+      err_file = args[i+1];
+    } else if (strcmp(args[i], "&>") == 0) {
+      if (cmd_end == -1) cmd_end = i;
+      output_file = args[i+1];
+      redirect_err = 1;
     }
   }
+  
   if (cmd_end != -1) {
     args[cmd_end] = NULL;
   }
@@ -33,11 +51,23 @@ void setup_redirection(char **args) {
     dup2(fd_in, STDIN_FILENO);
     close(fd_in);
   }
+  
   if (output_file) {
-    int fd_out = open(output_file, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+    int flags = O_WRONLY | O_CREAT | (append ? O_APPEND : O_TRUNC);
+    int fd_out = open(output_file, flags, 0644);
     if (fd_out < 0) { perror("myshell: output file"); exit(EXIT_FAILURE); }
     dup2(fd_out, STDOUT_FILENO);
+    if (redirect_err) {
+        dup2(fd_out, STDERR_FILENO);
+    }
     close(fd_out);
+  }
+  
+  if (err_file && !redirect_err) {
+      int fd_err = open(err_file, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+      if (fd_err < 0) { perror("myshell: err file"); exit(EXIT_FAILURE); }
+      dup2(fd_err, STDERR_FILENO);
+      close(fd_err);
   }
 }
 
@@ -49,8 +79,18 @@ int shell_launch(char **args, int run_bg)
   pid = fork();
   if (pid == 0) {
     // Child process
-    // Restore default SIGINT behavior for the child
+    pid_t cpid = getpid();
+    setpgid(cpid, cpid);
+    if (!run_bg) {
+        tcsetpgrp(shell_terminal, cpid);
+    }
+    
+    // Restore default signal handlers for the child
     signal(SIGINT, SIG_DFL);
+    signal(SIGQUIT, SIG_DFL);
+    signal(SIGTSTP, SIG_DFL);
+    signal(SIGTTIN, SIG_DFL);
+    signal(SIGTTOU, SIG_DFL);
     
     setup_redirection(args);
     if (execvp(args[0], args) == -1) {
@@ -62,17 +102,24 @@ int shell_launch(char **args, int run_bg)
     perror("myshell");
   } else {
     // Parent process
+    setpgid(pid, pid); // Prevent race condition
+    
+    // Copy the command for display
+    char cmd[1024] = {0};
+    for(int j=0; args[j]!=NULL; j++) {
+        strcat(cmd, args[j]);
+        if(args[j+1]!=NULL) strcat(cmd, " ");
+    }
+    
     if (!run_bg) {
-      do {
-        wpid = waitpid(pid, &status, WUNTRACED);
-      } while (!WIFEXITED(status) && !WIFSIGNALED(status));
-      if (WIFEXITED(status)) {
-         last_command_status = WEXITSTATUS(status);
-      } else {
-         last_command_status = 1;
-      }
+      tcsetpgrp(shell_terminal, pid);
+      add_job(pid, 0, cmd);
+      struct Job *j = find_job_by_pid(pid);
+      if (j) wait_for_job(j);
     } else {
-      printf("[Started background process %d]\n", pid);
+      add_job(pid, 1, cmd);
+      struct Job *j = find_job_by_pid(pid);
+      if (j) printf("[%d] %d\n", j->id, pid);
     }
   }
 
