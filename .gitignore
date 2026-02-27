@@ -20,5 +20,6 @@ Thumbs.db
 *.swp
 *.swo
 
-# txt files
+# txt and log files
 *.txt
+*.log

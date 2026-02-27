@@ -53,3 +53,20 @@ Commands like `cd` and `exit` must be built manually because they change the sta
 * **Environment Variables (`export`, `$VAR`):** Create an `export` built-in command. Update the tokenizer to scan for the `$` symbol and expand variables by pulling their values via `getenv()`.
 * **Logical Operators (`&&`, `||`):** Parse for conditional separators. Ensure that commands chained with `&&` only run if the previous command succeeded (returned `0`), and `||` runs only if it failed.
 * **Globbing (Wildcards):** Add support for `*` and `?`. Use the C `<glob.h>` library to expand patterns (e.g., `*.c`) into lists of matching filenames before sending them to `execvp()`.
+
+### Phase 8: Personalization & Persistence
+* **Startup Scripts (`.myshellrc`):** Modify `main.c` to look for a configuration file in the user's home directory upon launch. Read and execute its contents line-by-line to load saved environments and variables.
+* **Dynamic Prompt Engine:** Replace the hardcoded `myshell> ` with a dynamically generated prompt string. Use `getcwd()` to display the current working directory, and incorporate ANSI escape codes for terminal colors.
+
+### Phase 9: Productivity & Aliasing
+* **Command Aliases:** Implement a key-value store (linked list) to manage custom user shortcuts. Add `alias` and `unalias` builtins. Update the parser to substitute aliases before command execution.
+* **Directory Stack:** Implement `pushd`, `popd`, and `dirs` built-in commands. Maintain a stack data structure to allow users to quickly save and return to previous working directories without typing full paths.
+
+### Phase 10: Advanced Stream & I/O Control
+* **Append Redirection (`>>`):** Modify the redirection parser to recognize `>>` and open files using the `O_APPEND` flag rather than `O_TRUNC`.
+* **Standard Error Handling (`2>`, `&>`):** Expand redirection to handle stderr (file descriptor 2) separately, allowing users to log errors to specific files or combine stdout and stderr into one stream.
+
+### Phase 11: POSIX Job Control (Advanced)
+* **Job Tracking:** Create a Job linked list to track process IDs (PIDs), command strings, and states (Running, Stopped, Done) for background tasks. Add a `jobs` built-in to display this list.
+* **Process Suspension (Ctrl+Z):** Catch the `SIGTSTP` signal to stop (suspend) a foreground process rather than killing it, adding it to the jobs list as 'Stopped'.
+* **Foreground & Background Management:** Implement `fg` (bring a background/stopped job to the foreground and wait) and `bg` (send `SIGCONT` to resume a stopped job in the background).
